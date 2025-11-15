@@ -4,7 +4,7 @@ import os
 from google.adk.runners import InMemoryRunner
 
 # agent config
-from agent_config import root_agent
+from agent import root_agent
 
 # local env
 from dotenv import load_dotenv
