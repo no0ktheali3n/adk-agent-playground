@@ -33,16 +33,12 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 │
 ├── main.py                          <-- Optional root-level runner
 │
-├── adk_agent_single/                
-    ├── main.py
-    ├── agent_config.py
-    ├── __init__.py                 <-- Added for clean module import
-    └── (future tools, tests, etc.)
-├── sample_agent/                    <-- v0.1.1 ADK-generated agent (UI-ready)
-│   ├── agent.py
-│   ├── __init__.py
-│   └── .env
-│
+├── adk_agent_single/                <-- Migrated v0.1.0 agent project
+|   ├── main.py
+|   ├── agent_config.py
+|   ├── __init__.py                 <-- Added for clean module import
+|   └── (future tools, tests, etc.)
+|
 └── sample_agent/                    <-- v0.1.1 ADK-generated agent (UI-ready)
 │   ├── agent.py
 │   ├── __init__.py
