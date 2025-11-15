@@ -29,20 +29,32 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 │
 ├── .venv/                           <-- Single shared environment (uv-managed)
 ├── pyproject.toml                   <-- Dependency + tool config
-├── README.md
+├── README.md                        <-- Project README
 │
 ├── main.py                          <-- Optional root-level runner
 │
+├── adk_agent_multi/                 <-- v0.2.0 agent project
+|   ├── sub_agents/
+|   |   ├── __init__.py
+|   |   ├── research_agent.py
+|   |   └── summarizer_agent.py
+|   ├── main.py                      <-- test runner
+|   ├── agent.py                     <-- root agent / orchestrator
+|   ├── __init__.py                  <-- Added for gui module import
+|   └── .env
+|
 ├── adk_agent_single/                <-- Migrated v0.1.0 agent project
 |   ├── main.py
-|   ├── agent_config.py
-|   ├── __init__.py                 <-- Added for clean module import
-|   └── (future tools, tests, etc.)
+|   ├── agent.py
+|   ├── __init__.py                  <-- Added for gui module import
+|   └── .env
 |
 └── sample_agent/                    <-- v0.1.1 ADK-generated agent (UI-ready)
 │   ├── agent.py
-│   ├── __init__.py
+│   ├── __init__.py                  <-- Added for gui module import
 │   └── .env
+|
+└── (future tools, tests, etc.)
 ~~~
 
 ### Why this structure?
@@ -50,12 +62,88 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 - ADK Web UI auto-discovers agents by scanning **subdirectories** containing `agent.py`
 - Python requires **underscore-based** package names (no hyphens)
 - A **single environment at the project root** avoids nested `.venv` issues
-- Clean layout for future multi-agent setups (Days 3–5)
+- Clean layout for future multi-agent setups
 - Git-friendly, deployment-friendly, production-scalable
 
 ---
 
 # 🚀 Version History
+
+# 🔥 v0.2.0 — Multi-Agent Orchestration Release  
+This version introduces a full **three-agent system** with modular architecture.
+
+## **Components**
+
+### **1. ResearchAgent** (`research_agent.py`)
+- Uses Google Search to gather 2–3 facts on any topic
+- Returns findings under `output_key="research_findings"`
+
+### **2. SummarizerAgent** (`summarizer_agent.py`)
+- Accepts `{research_findings}`
+- Produces a concise bullet-point summary (3–5 key points)
+- Returns results under `output_key="final_summary"`
+
+### **3. ResearchCoordinator (root_agent)** (`agent.py`)
+- Orchestrates the workflow:
+  1. Calls `ResearchAgent` via `AgentTool`
+  2. Passes factual findings to `SummarizerAgent`
+  3. Returns a final polished summary back to the user
+
+This is our first real **agent team**, with explicit tool-to-tool coordination inside a single session.
+
+---
+
+## ▶️ Running Multi-Agent Mode
+
+### **Using the custom runner (recommended for development)**
+
+Run from project root:
+
+~~~
+uv run python -m adk_agent_multi.main
+~~~
+
+The runner:
+
+- Loads `.env` from `adk_agent_multi/`
+- Initializes the orchestrator agent
+- Executes a full research → summarize workflow
+- Prints the entire `run_debug()` trace for clarity
+
+---
+
+### **Using the ADK CLI**
+
+~~~
+uv run adk run adk_agent_multi
+~~~
+
+This loads `.env` automatically and starts an interactive session.
+
+### ▶ Running the ADK Web UI
+
+From the **project root** (`adk-agent-playground/`):
+
+~~~
+uv run adk web --port 8000
+~~~
+
+Then open:
+
+~~~
+http://localhost:8000
+~~~
+
+You should now see:
+
+- **sample_agent**
+- **adk_agent_single**
+- **adk_agent_multi**
+
+in the agent dropdown.
+
+
+---
 
 ## **v0.1.1 — Multi-Agent Structure + ADK Web UI Integration**
 This release introduces a clean, scalable folder structure and a fully ADK-compliant agent package.
@@ -75,31 +163,10 @@ This release introduces a clean, scalable folder structure and a fully ADK-compl
   uv run adk web --port 8000
   ~~~
 
-### ▶ Running the ADK Web UI
-
-From the **project root** (`adk-agent-playground/`):
-
-~~~
-uv run adk web --port 8000
-~~~
-
-Then open:
-
-~~~
-http://localhost:8000
-~~~
-
-You should now see both:
-
-- **sample_agent**
-- **adk_agent_single**
-
-in the agent dropdown.
-
 ---
 
 ## **v0.1.0 — Initial Single-Agent Prototype**
-This version introduced your first working local ADK agent.
+This version introduced first working local ADK agent.
 
 ### Features
 - Standalone agent using Google Gemini 2.5 Flash-Lite
@@ -160,7 +227,7 @@ uv run adk web --port 8000
 uv run adk run sample_agent
 ~~~
 
-### Legacy Runner (v0.1.0)
+### CLI Runner (adk_single_agent - v0.1.0)
 
 ~~~
 uv run adk_agent_single/main.py
@@ -172,15 +239,15 @@ uv run adk_agent_single/main.py
 
 The playground will grow into a full multi-agent development environment:
 
-### **v0.2.x — Multi-Agent Folder & Shared Tools**
-- Move agents into `/agents/`
-- Shared tool registry
-- Logging utilities
+### **v0.2.x — Multi-Agent Folder**
+- Multi agent support (orchestrator and subagents)
+- Researcher and Summarizer
+- Workflow patterns (prompted, sequential, etc)
 
-### **v0.3.x — Custom Tools**
-- File-based tools
-- REST API wrappers
-- Local document retrieval
+### **v0.3.x — Shared & Custom Tools**
+- Shared tool registry
+- REST API wrappers?
+- Local document retrieval?
 
 ### **v0.4.x — Pipelines & Chaining**
 - Multi-agent interactions
