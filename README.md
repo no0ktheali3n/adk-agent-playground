@@ -23,7 +23,7 @@ This playground supports:
 
 ---
 
-# 📁 Repository Structure (Updated as of v0.2.0)
+# 📁 Repository Structure (Updated as of v0.2.1)
 
 ~~~
 adk-agent-playground/                <-- Git repo root + UV environment root
