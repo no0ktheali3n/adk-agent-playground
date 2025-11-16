@@ -29,31 +29,39 @@ This playground supports:
 adk-agent-playground/                <-- Git repo root + UV environment root
 │
 ├── .venv/                           <-- Single unified environment (uv-managed)
+├── .env                             <-- Environment variables live in root directory
 ├── pyproject.toml                   <-- Dependencies and tool config
 ├── README.md                        <-- Project documentation
 │
 ├── main.py                          <-- Optional top-level runner (unused for now)
 │
-├── adk_agent_multi/                 <-- v0.2.x multi-agent system
+├── adk_agent_multi/                 <-- v0.2.0 multi-agent system
 │   ├── sub_agents/
 │   │   ├── __init__.py
 │   │   ├── research_agent.py
 │   │   └── summarizer_agent.py
-│   ├── main.py                      <-- dev runner (requires python -m)
-│   ├── agent.py                     <-- root coordinator agent
 │   ├── __init__.py                  <-- package marker (required)
-│   └── .env
+│   ├── agent.py                     <-- root coordinator agent
+│   └── main.py                      <-- local dev runner (requires python -m)
 │
+├── adk_agent_sequence/              <-- v0.2.1 sequential agent system
+│   ├── sub_agents/
+│   │   ├── __init__.py
+│   │   ├── editor_agent.py
+│   │   ├── outline_agent.py
+│   │   └── writer_agent.py
+│   ├── __init__.py                  <-- package marker (required)
+│   ├── agent.py                     <-- root coordinator agent
+│   └── main.py                      <-- local dev runner (requires python -m)
+|
 ├── adk_agent_single/                <-- v0.1.x single-agent baseline
-│   ├── main.py
-│   ├── agent.py
-│   ├── __init__.py
-│   └── .env
+│   ├── __init__.py                  <-- package marker (required)
+│   ├── agent.py                     <-- root coordinator agent
+│   └── main.py                      <-- local dev runner (doesn't require -m flag due to no nested sub_agent structure)
 │
-└── sample_agent/                    <-- v0.1.1 ADK-generated agent
-    ├── agent.py
-    ├── __init__.py
-    └── .env
+├── sample_agent/                    <-- v0.1.1 ADK-generated agent
+|   ├── __init__.py
+└─  └── agent.py
 ~~~
 
 ### Why this structure?
@@ -68,9 +76,66 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 
 # 🚀 Version History
 
+## 🔥 v0.2.1 — Sequential Agent Pipeline (Outline → Draft → Edit)
+
+This update extends the v0.2.x multi-agent architecture by introducing a fully structured **SequentialAgent pipeline**, implemented in a new module:
+
+~~~
+adk_agent_sequence/
+~~~
+
+### ✔ New Capabilities
+
+This version demonstrates a **deterministic, assembly-line workflow**, where each agent executes in strict order and passes its output to the next stage:
+
+1. **OutlineAgent**  
+   Creates a structured blog outline with headline + sections.
+
+2. **WriterAgent**  
+   Expands the outline into a 200–300 word blog draft.
+
+3. **EditorAgent**  
+   Polishes the draft for grammar, flow, clarity, and style.
+
+These three sub-agents are wrapped by a `SequentialAgent` named **BlogPipeline**, ensuring predictable, ordered multi-agent behavior. Each agent automatically receives the previous agent’s output via ADK’s state injection.
+
+### ✔ Example Workflow
+
+~~~
+User → OutlineAgent → WriterAgent → EditorAgent → Final Output
+~~~
+
+### ✔ Runner
+
+A new local runner is included:
+
+~~~bash
+uv run python -m adk_agent_sequence.main
+~~~
+
+This script:
+
+- Loads configuration from the **top-level `.env` only**  
+- Initializes the BlogPipeline sequential agent  
+- Executes a full outline → draft → edit cycle  
+- Displays a complete debug trace via `run_debug()`
+
+### ✔ Directory Update
+
+The repository has been simplified so that **only one `.env` file** lives at the repository root (`adk-agent-playground/.env`).  
+All nested `.env` files have been removed in this version, as ADK resolves environment variables globally during local execution.
+
+This release completes the **Sequential Agent** workflow and sets the foundation for:
+
+- **v0.2.2 — Parallel Agents**  
+- **v0.2.3 — Loop / Iterative Agents**  
+
+which will continue expanding the v0.2.x multi-agent exploration series.
+
+
 ## 🔥 v0.2.0 — Multi-Agent System (Research → Summarize → Respond)
 
-This version implements a **three-agent architecture**, passing data amongst 3 agents for research, summarization, and orchestration.
+This version implements a **three-agent architecture**, passing data amongst 3 agents for research, summarization, and LLM orchestration.
 
 ### Agents Included
 
@@ -193,7 +258,7 @@ Once UV is installed, you can run any agent or development command in this repo 
 
 # ⚙ Setup
 
-## This project assumes you have UV installed locally and have already run uv
+## This project assumes you have UV installed locally and have already run uv init
 
 ### Install dependencies
 ~~~
@@ -211,38 +276,120 @@ GOOGLE_GENAI_USE_VERTEXAI=0
 ---
 
 # 🧭 Development Roadmap  
-*(Aligned with Kaggle 5-Day Agents Bootcamp adapted for local python development environment)*
+*(Guided by the Kaggle 5-Day Agents Bootcamp adapted to a local python development environment, but versioned according to actual functionality added to this repository.)*
 
-## ✔ **v0.1.x — Day 1: Prompt → Action**
-- Single agent  
-- Tool invocation  
-- Local runner  
-- ADK UI integration  
+The 5-Day curriculum serves as a **technical progression guide**, not a strict versioning schedule.  
+We will increment versions **when meaningful capability changes occur**, even if a single bootcamp day results in multiple internal updates.
 
-## ✔ **v0.2.x — Day 3: Agent Architectures**
-- Multi-agent orchestration  
-- Research + Summarizer + Coordinator  
-- Tool-to-tool data passing  
+---
 
-## 🔜 **v0.3.x — Day 2: Custom Tools & Enhanced Capabilities**
-- Add custom tools:
-  - Web scraper  
-  - Weather API  
-  - Market/finance data fetcher  
-- Formal tool registry shared across agents  
+## ✔ **v0.1.x – Foundations (Day 1: Single Agent)**  
+**Bootcamp Themes:**  
+• Introduction to agents  
+• Agent taxonomy, policies, identity, reliability  
+• Build your first agent (Gemini + ADK)  
+• Add Google Search as a tool  
 
-## 🔜 **v0.4.x — Day 4: Observability & Evaluation**
-- Structured logs  
-- Latency/throughput metrics  
-- Tool-call analytics  
-- Error trace visualization  
-- Evaluation prompts & regression tests  
+**Repository Achievements:**  
+- Implemented a working single-agent system  
+- Local runner using `InMemoryRunner`  
+- Retry logic + `.env` configuration  
+- Added ADK Web UI compatibility
 
-## 🔜 **v0.5.x — Day 5: Deployment & Scaling**
-- Export agents as services  
-- Endpoint-based orchestrator  
-- Discord/Slack/Lambda integration  
-- Agent2Agent communication patterns  
+This corresponds to the *first half* of Day 1.
+
+---
+
+## ✔ **v0.2.x – Multi-Agent Architectures (Day 1: Multi-Agent)**  
+**Bootcamp Themes:**  
+• Multi-agent design patterns  
+• Specialized roles  
+• Agent coordination models  
+• Using tools across agents  
+
+**Repository Achievements:**  
+- Introduced multi-agent orchestration  
+- Added ResearchAgent + SummarizerAgent  
+- Root coordinator agent using `AgentTool`  
+- Completed a coordinated workflow  
+
+This corresponds to the *second half* of Day 1.
+
+---
+
+## 🔜 **v0.3.x – Agent Tools, MCP, & Long-Running Operations (Day 2)**  
+**Bootcamp Themes:**  
+• Designing custom tools  
+• Best practices for safe tools  
+• Model Context Protocol (MCP)  
+• Long-running tool calls  
+• Human-in-the-loop approval patterns  
+
+**Planned Repository Additions:**  
+- Convert Python functions into ADK tools  
+- Introduce first MCP-compliant tool(s)  
+- Implement a long-running operation example  
+- Add human-approval checkpoints for tools  
+- Build shared tool registry (usable by any agent)
+
+This may be released as **multiple sub-versions (v0.3.0, v0.3.1, v0.3.2)** depending on complexity.
+
+---
+
+## 🔜 **v0.4.x – Sessions, Memory & Stateful Agents (Day 3)**  
+**Bootcamp Themes:**  
+• Context engineering  
+• Sessions (short-term conversation state)  
+• Memory (long-term persistent state)  
+• Coherent multi-turn dialogue  
+
+**Planned Repository Additions:**  
+- Add session-level working memory  
+- Add persistent long-term memory store  
+- Build stateful agents with evolving context  
+- Memory modules configurable per-agent  
+- Optional: shared memory for multi-agent systems  
+
+This release expands the playground from "stateless" to "intelligent + continuous."
+
+---
+
+## 🔜 **v0.5.x – Observability, Logging, Traces & Evaluation (Day 4)**  
+**Bootcamp Themes:**  
+• Logs = the diary  
+• Traces = the narrative  
+• Metrics = health and performance  
+• Evaluation frameworks (LLM-as-a-judge, HITL)  
+
+**Planned Repository Additions:**  
+- Unified structured logging across all agents  
+- Execution traces for multi-agent workflows  
+- Debug panels for tool-calling behavior  
+- Metrics: latency, tokens, decision depth  
+- Evaluation harness for scoring agent output  
+- Regression testing suite  
+
+This improves reliability, confidence, and reproducibility.
+
+---
+
+## 🔜 **v0.6.x – Prototype → Production (Day 5)**  
+**Bootcamp Themes:**  
+• Deployment patterns  
+• A2A Protocol (Agent-to-Agent communication)  
+• Independent multi-agent services  
+• Productionization workflows  
+• Optional cloud deployment (Vertex Agent Engine)  
+
+**Planned Repository Additions:**  
+- Local A2A communication module  
+- Standalone agent services (run as microservices)  
+- Multi-agent network simulations  
+- Deployment-ready folder structure  
+- Optional: scripts for cloud deployment  
+- Optional: Vertex Agent Engine adaptation  
+
+This phase establishes real scalability and interoperability.
 
 ---
 
