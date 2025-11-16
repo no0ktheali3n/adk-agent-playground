@@ -23,7 +23,7 @@ This playground supports:
 
 ---
 
-# 📁 Repository Structure (Updated as of v0.2.2)
+# 📁 Repository Structure (Updated as of v0.2.3)
 
 ~~~
 adk-agent-playground/                <-- Git repo root + UV environment root
@@ -34,7 +34,17 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 ├── README.md                        <-- Project documentation
 │
 ├── main.py                          <-- Optional top-level runner (unused for now)
-│
+|
+├──adk_agent_loop/                   <-- v0.2.3 agent refinement loop system
+|   ├── sub_agents/
+│   │   ├── __init__.py
+│   │   ├── critic_agent.py
+│   │   ├── initial_writer_agent.py
+│   │   └── refiner_agent.py
+|   │
+|   ├── agent.py                     <-- LoopAgent + Sequential wrapper (StoryRefinementLoop + StoryPipeline)
+|   └── main.py                      <-- Local test runner for the loop workflow
+|
 ├── adk_agent_multi/                 <-- v0.2.0 multi-agent system
 │   ├── sub_agents/
 │   │   ├── __init__.py
@@ -86,6 +96,95 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 ---
 
 # 🚀 Version History
+
+## 🌀 v0.2.3 — Loop Workflows: Iterative Refinement with LoopAgent  
+This update introduces **iterative multi-agent refinement** using a `LoopAgent`, completing the final pattern from Day 1 of the Agent Builder curriculum.  
+Unlike sequential or parallel agents that run once, loop agents enable **feedback cycles**, **quality improvement**, and **conditional termination**.
+
+This version adds a complete **Story Writing + Critique Loop** system where a draft is repeatedly refined until approved by a critic.
+
+---
+
+`adk_agent_loop/`
+
+### ✓ New Capabilities
+
+This module demonstrates a **refinement cycle** powered by a `LoopAgent`, where agents run repeatedly until a stop condition is met or a maximum number of iterations is reached.
+
+The workflow includes:
+
+1. **InitialWriterAgent**  
+   Produces the first draft of a short story (100–150 words).  
+   - No tools  
+   - Output: `current_story`
+
+2. **CriticAgent**  
+   Reviews the draft and either:  
+   - Returns actionable critique (`critique`)  
+   - Or responds with **“APPROVED”** exactly, which signals the loop to stop.  
+   - Output: `critique`
+
+3. **exit_loop() → FunctionTool**  
+   A Python function wrapped as a callable tool.  
+   When invoked, it returns a structured payload the `LoopAgent` recognizes as a termination signal.
+
+4. **RefinerAgent**  
+   Reads the critic’s feedback and decides:  
+   - If critique == **APPROVED**, call the `exit_loop` tool  
+   - Otherwise rewrite the story, updating `current_story` with a refined version  
+   - Output: updated `current_story`
+
+These agents are wrapped in:
+
+- **StoryRefinementLoop (LoopAgent)** — runs Critic → Refiner repeatedly  
+- **StoryPipeline (SequentialAgent)** — runs InitialWriter once, then runs the refinement loop
+
+---
+
+### ✓ Workflow Summary
+
+User → InitialWriter → (Critic ↔ Refiner Loop) → Final Story
+
+The loop runs up to `max_iterations=2`, preventing infinite cycles while still allowing meaningful refinement.
+
+---
+
+### ✓ Runner
+
+Included test runner:
+
+~~~text
+uv run python -m adk_agent_loop.main
+~~~
+
+This runner:
+
+- Loads `.env` from the repository root  
+- Executes the full **write → critique → refine** loop  
+- Prints the detailed `run_debug()` trace for full visibility  
+- Produces a finalized short story that has been explicitly approved by the critic
+
+---
+
+### ✓ Purpose of This Version
+
+v0.2.3 completes the trio of Day 1 multi-agent workflow patterns:
+
+- **v0.2.1 — Sequential Workflows**  
+- **v0.2.2 — Parallel Workflows**  
+- **v0.2.3 — Loop Workflows**
+
+With all three patterns implemented cleanly and modularly, the repo is now fully prepared for the next phase (v0.3.x series), which will introduce:
+
+- Custom tools  
+- MCP-based tools  
+- Long-running operations  
+- Shared tool registries  
+- Early context/memory features
+
+---
+
+This version finalizes the foundational architecture for **all core multi-agent control-flow patterns** in the ADK ecosystem within this playground.
 
 ## 🔷 v0.2.2 — Parallel Multi-Topic Research System (Concurrent Agents)
 

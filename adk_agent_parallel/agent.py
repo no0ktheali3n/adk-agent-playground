@@ -1,6 +1,5 @@
 from google.adk.agents import ParallelAgent, SequentialAgent
 from google.adk.models.google_llm import Gemini
-from google.adk.tools import google_search
 from google.genai import types
 
 from .sub_agents.finance_researcher import finance_researcher
