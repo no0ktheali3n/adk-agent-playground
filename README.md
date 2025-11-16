@@ -1,5 +1,5 @@
 # ADK Agent Playground  
-![Version](https://img.shields.io/github/v/tag/no0ktheali3n/adk-agent-playground?label=Version&color=blue&style=flat-square)
+![Version](https://img.shields.io/github/v/tag/no0ktheali3n/adk-agent-playground?label=Version&color=blue&style=flat-square&cacheSeconds=0)
 
 A development environment for building and testing agents using Google’s **Model-Agnostic Agent Development Kit (ADK)**.  
 Designed to evolve from a **single-agent prototype (v0.1.x)** into a **multi-agent orchestration system (v0.2.x)** and eventually into a full **AIien Industries Agent Suite**.
@@ -23,7 +23,7 @@ This playground supports:
 
 ---
 
-# 📁 Repository Structure (Updated as of v0.2.1)
+# 📁 Repository Structure (Updated as of v0.2.2)
 
 ~~~
 adk-agent-playground/                <-- Git repo root + UV environment root
@@ -44,6 +44,17 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 │   ├── agent.py                     <-- root coordinator agent
 │   └── main.py                      <-- local dev runner (requires python -m)
 │
+├── adk_agent_parallel/              <-- v0.2.2 concurrent agent system
+│   ├── sub_agents/
+│   │   ├── __init__.py
+│   │   ├── aggregator_agent.py
+│   │   ├── finance_researcher.py
+│   │   ├── health_researcher.py
+│   │   └── tech_researcher.py
+│   ├── __init__.py                  <-- package marker (required)
+│   ├── agent.py                     <-- root coordinator agent, contains ParallelAgent and SequentialAgent
+│   └── main.py                      <-- local dev runner (requires python -m)
+|
 ├── adk_agent_sequence/              <-- v0.2.1 sequential agent system
 │   ├── sub_agents/
 │   │   ├── __init__.py
@@ -76,6 +87,81 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 
 # 🚀 Version History
 
+## 🔷 v0.2.2 — Parallel Multi-Topic Research System (Concurrent Agents)
+
+This update introduces **parallel agent execution**, enabling multiple independent researchers to run **simultaneously** and dramatically improve throughput compared to sequential pipelines.
+
+This version adds a new project:
+
+`adk_agent_parallel/`
+
+### ✓ New Capabilities
+
+This system demonstrates **concurrent, independent multi-agent workflows**, where multiple specialists run in parallel and their results are combined by an aggregator.
+
+Four agents make up the full workflow:
+
+1. **TechResearcher**
+   - Investigates AI/ML and technology trends  
+   - Produces concise research under `tech_research`
+
+2. **HealthResearcher**
+   - Explores medical breakthroughs and recent scientific advances  
+   - Returns output under `health_research`
+
+3. **FinanceResearcher**
+   - Analyzes fintech and financial innovation trends  
+   - Returns output under `finance_research`
+
+4. **AggregatorAgent**
+   - Runs *after* all research tasks complete  
+   - Synthesizes the three reports into a single `executive_summary`
+
+These sub-agents are grouped under a **ParallelAgent**, which executes all researchers concurrently.  
+The ParallelAgent is then wrapped inside a **SequentialAgent**, ensuring that the aggregator runs *only after* all parallel subtasks complete.
+
+### ✓ Example Workflow
+
+~~~
+User → TechResearcher + HealthResearcher + FinanceResearcher (parallel) → AggregatorAgent → Final Summary
+~~~
+
+This architecture is ideal when:
+
+- tasks are **independent**
+- speed and concurrency matter
+- final output depends on combining multiple specialized results
+
+### ✓ Runner
+
+A dedicated development runner is provided:
+
+~~~
+uv run python -m adk_agent_parallel.main
+~~~
+
+This triggers:
+
+- concurrent execution of three research agents  
+- automatic aggregation of results  
+- full debug trace output for transparent inspection
+
+### ✓ Updated Directory Structure
+
+`adk_agent_parallel/` includes:
+
+- `agent.py` — orchestrator (SequentialAgent + ParallelAgent)
+- `main.py` — local runner
+- `sub_agents/`
+  - `tech_researcher.py`
+  - `health_researcher.py`
+  - `finance_researcher.py`
+  - `aggregator_agent.py`
+
+All agents use the unified `.env` in the project root (introduced in v0.2.1).
+
+---
+
 ## 🔥 v0.2.1 — Sequential Agent Pipeline (Outline → Draft → Edit)
 
 This update extends the v0.2.x multi-agent architecture by introducing a fully structured **SequentialAgent pipeline**, implemented in a new module:
@@ -97,7 +183,7 @@ This version demonstrates a **deterministic, assembly-line workflow**, where eac
 3. **EditorAgent**  
    Polishes the draft for grammar, flow, clarity, and style.
 
-These three sub-agents are wrapped by a `SequentialAgent` named **BlogPipeline**, ensuring predictable, ordered multi-agent behavior. Each agent automatically receives the previous agent’s output via ADK’s state injection.
+These three sub-agents are wrapped by a `SequentialAgent` named **BlogPipeline**, ensuring predictable, ordered multi-agent behavior. Each agent automatically receives the previous agent’s output via ADK’s state injection.  No tools required - this module relies on the LLM's default capabilities to generate the outline, draft and editing.
 
 ### ✔ Example Workflow
 
