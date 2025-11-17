@@ -80,11 +80,24 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 │   ├── agent.py                     <-- root coordinator agent
 │   └── main.py                      <-- local dev runner (doesn't require -m flag due to no nested sub_agent structure)
 |
-├──common/
+├── common/
 |   ├── __init__.py  # Package marker (kept intentionally minimal)
 |   ├── llm.py       # Canonical retry config + shared LLM constructors
 |   └── tools.py     # Shared Google Search & future tools
 │
+├── day_2/                                   <-- v0.3.x custom + built-in tool systems
+|   ├── currency_converter_agent/             <-- v0.3.0 base agent (custom tools only)
+|   │  ├─ __init__.py                        <-- package marker
+|   │  ├─ agent.py                           <-- currency converter agent definition
+|   │  ├─ main.py                            <-- local dev runner (python -m)
+|   │  ├─ tools.py                           <-- custom lookup tools (fees + exchange rates)
+|   │  └─ enhanced_currency_agent/           <-- v0.3.0 advanced extension
+|   │     ├─ __init__.py                     <-- package marker
+|   │     ├─ agent.py                        <-- orchestrator agent with agent-tools
+|   │     ├─ calculation_agent.py            <-- specialist agent w/ built-in code execution
+|   │     ├─ main.py                         <-- local dev runner (python -m)
+|   │     └─ tools.py                        <-- extended / shared tool logic
+|
 ├── sample_agent/                    <-- v0.1.1 ADK-generated agent
 |   ├── __init__.py
 └─  └── agent.py
@@ -173,6 +186,289 @@ This section wrapped up the foundational workflows (v0.2.x) and prepared the rep
 
 # 🚀 Version History
 
+# 🚀 Google ADK — v0.3.0 Release  
+### **Beginning the v0.3.x Series: Advanced Tooling, Multi-Agent Patterns & Reliable Execution**
+
+The **v0.3.x update series** marks a shift from simple agent loops toward **modular, production-minded tool integration**, using Google’s ADK to explore:
+
+- **Custom tools**  
+- **Built-in tools** (e.g., Code Execution)  
+- **Agent-as-Tool patterns**  
+- **MCP & long-running tasks** (coming in v0.3.1)
+
+This phase focuses on *control*, *delegation*, and *specialization* in multi-agent systems.
+
+---
+
+## 🧩 Agent Tools vs. Sub-Agents  
+*(Context from Bootcamp Section 3.3)*
+
+Understanding how ADK treats multi-agent systems is key to architecting reliable pipelines.
+
+### **Agent Tools** (used in v0.3.x)
+- Agent A *calls* Agent B as a **tool**  
+- Agent B returns results to Agent A  
+- Agent A **stays in control** of the user conversation  
+- Ideal for **specialized tasks** — e.g., calculations, searches, format transformations
+
+### **Sub-Agents**  
+- Agent A **hands off control** entirely to Agent B  
+- Agent B takes over the dialogue  
+- Ideal for **tiered support systems** or **autonomous modes**
+
+➡️ **In these updates, we use Agent Tools** because the orchestrator agent must remain in control while delegating precise tasks like currency calculations.
+
+---
+
+## 🧰 Overview of ADK Tool Types  
+### A Quick Introduction to How Tools Work in Google’s Agent Development Kit
+
+In the ADK ecosystem, **tools are the core mechanism** that let agents take actions, call functions, access services, and delegate work.  
+Every meaningful agent workflow — whether it’s a currency conversion, a long-running job, or a multi-agent orchestration — ultimately comes down to *the tools it has access to*.
+
+ADK tools fall into **two major categories**:
+
+- **Custom Tools** — Tools *you* build  
+- **Built-in Tools** — Tools provided *by ADK* (ready to use)
+
+Below is a concise orientation to each type, based directly on the tutorial context.
+
+---
+
+                           ┌──────────────────┐
+                           │     ADK Tools    │
+                           └─────────┬────────┘
+                                     │
+                           ┌─────────▼──────────┐
+                           │    Custom Tools    │
+                           └──┬──────────────┬──┴─────────────────┬─────────────────┐
+                              │              │                    │                 │
+                              │              │                    │                 │
+                ┌─────────────▼──┐  ┌────────▼──────────┐   ┌─────▼─────┐   ┌───────▼──────┐
+                │ Function Tools │  │ Long Running Func.│   │ Agent     │   │  MCP Tools   │
+                └───────┬────────┘  │     Tools         │   │  Tools    │   └──────────────┘
+                        │           └───────────────────┘   └──────┬────┘
+                        │                                          │
+           ┌────────────▼─────────────────┐         ┌──────────────▼──────────────┐
+           │ get_fee_for_payment_method   │         │      calculation_agent      │
+           └──────────────────────────────┘         └─────────────────────────────┘
+
+
+# 1. 🔧 Custom Tools  
+Custom tools give you **full control** over logic, behavior, and capabilities.  
+You design exactly what the agent can do.
+
+### 🟩 Function Tools  
+Plain Python functions turned directly into tools.
+
+**Use cases:**  
+- Data lookups  
+- Internal APIs  
+- Rule-based logic  
+- Fee/rate retrieval (as used in v0.3.0)
+
+**Examples:**  
+- `get_fee_for_payment_method`  
+- `get_exchange_rate`
+
+**Why they matter:**  
+- Zero overhead  
+- Reusable across agents  
+- Deterministic implementation
+
+---
+
+### 🟦 Long-Running Function Tools  
+Functions intended for operations that **take significant time**.
+
+**Use cases:**  
+- Human approvals  
+- File processing  
+- Multi-step background tasks
+
+**Why they matter:**  
+- Let agents *start* a task  
+- Then continue working while it runs  
+- Essential for scalable or async workflows
+
+*(These will be a major focus in v0.3.1 when we add long-running task support.)*
+
+---
+
+### 🟨 Agent Tools  
+Tools that turn **an entire agent** into a callable function.
+
+**Use cases:**  
+- Specialist agents (math, code execution, data analysis)  
+- Delegating subtasks while keeping orchestration centralized  
+- Modular multi-agent architectures
+
+**Example:**  
+- The `calculation_agent` in v0.3.0, used as an `AgentTool`
+
+**Why they matter:**  
+- Enables “teams” of agents  
+- Allows expertise separation  
+- The orchestrator maintains control  
+  (unlike Sub-Agents, which take over the conversation)
+
+---
+
+### 🟪 MCP Tools  
+Tools from **Model Context Protocol** servers.
+
+**Use cases:**  
+- Filesystem access  
+- Database queries  
+- Maps, external services, connected apps
+
+**Why they matter:**  
+- Connect to anything that exposes an MCP interface  
+- Tooling becomes *service-agnostic*  
+- No custom API integration required
+
+*(This is also a target for v0.3.1.)*
+
+---
+
+### 🟫 OpenAPI Tools  
+Tools automatically generated from an OpenAPI spec.
+
+**Use cases:**  
+- REST APIs  
+- Internal enterprise APIs  
+- Third-party services
+
+**Why they matter:**  
+- No coding required  
+- Entire API becomes a toolset instantly  
+- Perfect for production integration
+
+---
+
+                           ┌──────────────────┐
+                           │     ADK Tools    │
+                           └─────────┬────────┘
+                                     │
+                           ┌─────────▼─────────┐
+                           │   Built-in Tools  │
+                           └──┬────────────┬───┘──────────────────────────────────┐
+                              │            │                                      │
+                              │            │                                      │
+                ┌─────────────▼┐   ┌───────▼──────────┐                 ┌─────────▼──────────────┐
+                │ Gemini Tools │   │ Google Cloud     │                 │   Third-party Tools    │
+                └──────┬───────┘   │     Tools        │                 └──┬───────────────┬─────┘
+                       │           └──────┬───────────┘                    │               |
+                       │                  │                                │               |
+        ┌──────────────▼─────────┐   ┌────▼─────────────┐      ┌───────────▼────┐   ┌──────▼───────────────┐
+        │     google_search,     │   │ BigQueryToolset, │      │     Github     │   │    HuggingFace       │
+        |   BuiltInCodeExecutor  |   | SpannerToolset   |      |                |   |                      |
+        └────────────────────────┘   └──────────────────┘      └────────────────┘   └──────────────────────┘
+
+
+# 2. ⚙️ Built-In Tools  
+Pre-built and maintained by ADK — reliable, tested, and start working immediately.
+
+These require **no custom code**, just configuration.
+
+---
+
+### ⭐ Gemini Tools  
+Tools that leverage the Gemini model’s native capabilities.
+
+**Examples:**  
+- `google_search`  
+- `BuiltInCodeExecutor` (used in v0.3.0)
+
+**Why they matter:**  
+- Zero setup  
+- High reliability  
+- Excellent for “smart” specialties (searching, code, reasoning)
+
+---
+
+### ☁️ Google Cloud Tools  
+Enterprise-grade toolsets for interacting with Google Cloud services.
+
+**Examples:**  
+- `BigQueryToolset`  
+- `SpannerToolset`  
+- `APIHubToolset`
+
+**Why they matter:**  
+- Secure, scalable, production-ready integrations  
+- Great for data-heavy workflows  
+- Automatic auth & safety baked in
+
+---
+
+### 🧩 Third-Party Tools  
+Wrappers for existing ecosystems such as GitHub or HuggingFace.
+
+**Use cases:**  
+- Fetching datasets  
+- Managing repos  
+- Integrating ML pipelines
+
+**Why they matter:**  
+- Reuse what already exists  
+- Avoid rebuilding functionality  
+- Ideal for MLOps and research pipelines
+
+---
+
+# 🎯 Why This Matters for v0.3.x  
+The v0.3.x series is all about developing a **mature, modular agent architecture** by exploring:
+
+- Custom tools  
+- Agent tools  
+- Built-in tools  
+- Upcoming MCP tools  
+- Long-running tool patterns  
+
+By understanding the tool model clearly, designing powerful multi-agent workflows becomes straightforward — and scalable.
+
+---
+
+# 🟦 v0.3.0 — Currency Converter + Enhanced Calculation Agent  
+### **Reliable Financial Calculations Using Custom Tools + Built-In Code Execution**
+
+This release introduces a modular, extensible example demonstrating how to combine:
+
+- **Custom ADK tools**  
+- **Specialized calculation agents**  
+- **Built-in code execution**  
+- **Agent-as-Tool integration**  
+
+The goal:  
+> Build a trustworthy currency conversion pipeline using tools, not raw LLM reasoning.
+
+---
+
+## 📁 New Project Structure (Day 2 — Tooling Architecture)
+
+~~~
+day_2/                                   <-- v0.3.x custom + built-in tool systems
+├─ currency_converter_agent/             <-- v0.3.0 base agent (custom tools only)
+│  ├─ __init__.py                        <-- package marker
+│  ├─ agent.py                           <-- currency converter agent definition
+│  ├─ main.py                            <-- local dev runner (python -m)
+│  ├─ tools.py                           <-- custom lookup tools (fees + exchange rates)
+│  └─ enhanced_currency_agent/           <-- v0.3.0 advanced extension
+│     ├─ __init__.py                     <-- package marker
+│     ├─ agent.py                        <-- orchestrator agent with agent-tools
+│     ├─ calculation_agent.py            <-- specialist agent w/ built-in code execution
+│     ├─ main.py                         <-- local dev runner (python -m)
+│     └─ tools.py                        <-- extended / shared tool logic
+~~~
+
+This layout establishes the foundation for **multi-module, multi-agent architectures**, with  
+`enhanced_currency_agent` nested under `currency_converter_agent` to reflect the progression from:
+
+**custom-tool-only agent → agent-tool architecture → code-executing specialist agent**.
+
+---
+
 ## 🔧 v0.2.4 — Common Module Refactor & Codebase Slimming
 
 This update introduces a major internal cleanup to the multi-agent modules by centralizing shared logic into a new `common/` package.  
@@ -209,7 +505,7 @@ Previously, every agent/sub-agent repeated the same imports:
 
 - `Gemini` model definition  
 - `retry_config` block  
-- `google_search` tool import  
+- Tool imports (built-in and, in the future, custom / 3rd party)  
 - `types.HttpRetryOptions`  
 - ADK boilerplate  
 
