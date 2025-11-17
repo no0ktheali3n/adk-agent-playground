@@ -23,7 +23,7 @@ This playground supports:
 
 ---
 
-# 📁 Repository Structure (Updated as of v0.2.4)
+# 📁 Repository Structure (Updated as of v0.3.0)
 
 ~~~
 adk-agent-playground/                <-- Git repo root + UV environment root
@@ -186,7 +186,7 @@ This section wrapped up the foundational workflows (v0.2.x) and prepared the rep
 
 # 🚀 Version History
 
-# 🚀 Google ADK — v0.3.0 Release  
+## 🚀 Google ADK — v0.3.0 Release  
 ### **Beginning the v0.3.x Series: Advanced Tooling, Multi-Agent Patterns & Reliable Execution**
 
 The **v0.3.x update series** marks a shift from simple agent loops toward **modular, production-minded tool integration**, using Google’s ADK to explore:
@@ -254,7 +254,7 @@ Below is a concise orientation to each type, based directly on the tutorial cont
            └──────────────────────────────┘         └─────────────────────────────┘
 
 
-# 1. 🔧 Custom Tools  
+## 1. 🔧 Custom Tools  
 Custom tools give you **full control** over logic, behavior, and capabilities.  
 You design exactly what the agent can do.
 
@@ -366,7 +366,7 @@ Tools automatically generated from an OpenAPI spec.
         └────────────────────────┘   └──────────────────┘      └────────────────┘   └──────────────────────┘
 
 
-# 2. ⚙️ Built-In Tools  
+## 2. ⚙️ Built-In Tools  
 Pre-built and maintained by ADK — reliable, tested, and start working immediately.
 
 These require **no custom code**, just configuration.
@@ -417,7 +417,7 @@ Wrappers for existing ecosystems such as GitHub or HuggingFace.
 
 ---
 
-# 🎯 Why This Matters for v0.3.x  
+## 🎯 Why This Matters for v0.3.x  
 The v0.3.x series is all about developing a **mature, modular agent architecture** by exploring:
 
 - Custom tools  
@@ -430,7 +430,7 @@ By understanding the tool model clearly, designing powerful multi-agent workflow
 
 ---
 
-# 🟦 v0.3.0 — Currency Converter + Enhanced Calculation Agent  
+## 🟦 v0.3.0 — Currency Converter + Enhanced Calculation Agent  
 ### **Reliable Financial Calculations Using Custom Tools + Built-In Code Execution**
 
 This release introduces a modular, extensible example demonstrating how to combine:
