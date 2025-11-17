@@ -1,22 +1,11 @@
 from google.adk.agents import Agent
-from google.adk.models.google_llm import Gemini
-from google.adk.tools import google_search
-from google.genai import types
-
-retry_config = types.HttpRetryOptions(
-    attempts=5,
-    exp_base=7,
-    initial_delay=1,
-    http_status_codes=[429, 500, 503, 504],
-)
+from common.llm import gemini_flash_lite
+from common.tools import google_search
 
 # Tech Researcher: Focuses on AI and ML trends.
 tech_researcher = Agent(
     name="TechResearcher",
-    model=Gemini(
-        model="gemini-2.5-flash-lite",
-        retry_options=retry_config
-    ),
+    model=gemini_flash_lite(),
     instruction="""Research the latest AI/ML trends as of the current date. Include 3 key developments,
 the main companies involved, and the potential impact. Keep the report very concise (100 words).""",
     tools=[google_search],

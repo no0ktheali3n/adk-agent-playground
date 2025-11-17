@@ -23,7 +23,7 @@ This playground supports:
 
 ---
 
-# 📁 Repository Structure (Updated as of v0.2.3)
+# 📁 Repository Structure (Updated as of v0.2.4)
 
 ~~~
 adk-agent-playground/                <-- Git repo root + UV environment root
@@ -79,6 +79,11 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 │   ├── __init__.py                  <-- package marker (required)
 │   ├── agent.py                     <-- root coordinator agent
 │   └── main.py                      <-- local dev runner (doesn't require -m flag due to no nested sub_agent structure)
+|
+├──common/
+|   ├── __init__.py  # Package marker (kept intentionally minimal)
+|   ├── llm.py       # Canonical retry config + shared LLM constructors
+|   └── tools.py     # Shared Google Search & future tools
 │
 ├── sample_agent/                    <-- v0.1.1 ADK-generated agent
 |   ├── __init__.py
@@ -95,7 +100,193 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 
 ---
 
+# 🧭 Workflow Pattern Summary — Choosing the Right Multi-Agent Architecture
+
+As of v0.2.3–v0.2.4, this project now includes **all three core Day 1 workflow patterns**:
+
+- **Sequential workflows**
+- **Parallel workflows**
+- **Loop / iterative refinement workflows**
+
+This section summarizes when to use each pattern, what they excel at, and how they differ — serving as a quick reference when designing new agents.
+
+---
+
+## 🔍 Decision Guide: Which Workflow Pattern Should You Use?
+
+                  ┌──────────────────────────────────────────┐
+                  │   What kind of workflow do you need?     │
+                  └──────────────────────────────────────────┘
+                          /       |        |        \
+                         /        |        |         \
+                        v         v        v          v
+               Fixed order   Concurrent   Refinement   Dynamic decisions
+               (A → B → C)    tasks        (A ↔ B)     (LLM chooses path)
+
+                  Use           Use          Use              Use
+      **SequentialAgent** **ParallelAgent** **LoopAgent**  LLM Orchestrator
+
+
+---
+
+## 📘 Quick Reference Table
+
+A compact comparison of all available workflow patterns:
+
+| **Pattern**                | **When to Use**                                 | **Example**                         | **Key Feature**                      |
+|----------------------------|-------------------------------------------------|-------------------------------------|--------------------------------------|
+| **LLM-based (sub_agents)** | Dynamic orchestration needed                    | Research → Summarize                | LLM decides the workflow steps       |
+| **Sequential**             | Steps must run in a strict linear order         | Outline → Write → Edit              | Deterministic, predictable pipeline  |
+| **Parallel**               | Tasks are independent; speed is important       | Multi-topic research                | True concurrent execution            |
+| **Loop**                   | Refinement cycles needed; quality control       | Writer ↔ Critic refinement loop     | Repeated passes until stopping rules |
+
+---
+
+## 🧩 How These Fit Into v0.2.x
+
+Each pattern is represented by its own module:
+
+- `adk_agent_sequence/` → **Sequential pipeline**
+- `adk_agent_parallel/` → **Parallel execution team**
+- `adk_agent_loop/` → **Loop-based refinement**
+- `adk_agent_multi/` → **LLM-orchestrated dynamic multi-agent system**
+
+This gives you a complete working library of reference architectures you can reuse, remix, or extend for future experimental agents.
+
+---
+
+## 🚀 What This Means for Future Development
+
+With these workflows implemented and documented, the project became ready to evolve into:
+
+- Custom toolchains  
+- Model Context Protocol (MCP) tools  
+- Stateful sessions & memory  
+- Long-running operations  
+- Cross-agent communication patterns  
+- Production-grade pipelines  
+
+This section wrapped up the foundational workflows (v0.2.x) and prepared the repo for the v0.3.x+ developments.
+
+---
+
+
 # 🚀 Version History
+
+## 🔧 v0.2.4 — Common Module Refactor & Codebase Slimming
+
+This update introduces a major internal cleanup to the multi-agent modules by centralizing shared logic into a new `common/` package.  
+The result is a **leaner, more maintainable, and more scalable codebase** that prepares the playground for the upcoming v0.3.x “Custom Tools + MCP” phase.
+
+---
+
+### ✔ What Changed in v0.2.4
+
+Three agent systems now use shared modules instead of repeating boilerplate:
+
+- `adk_agent_sequence/`
+- `adk_agent_parallel/`
+- `adk_agent_loop/`
+
+These modules now import from:
+
+common/  
+│  
+├── `llm.py`  ← Shared LLM constructors + retry config  
+└── `tools.py`  ← Shared Google Search tool + future custom tools  
+
+All repeated logic — especially the `Gemini` model setup, `HttpRetryOptions`, and tool imports — is consolidated here.
+
+---
+
+### ✔ Purpose of This Refactor
+
+This refactor solves several pain points discovered during development:
+
+#### 1. Eliminates Repetition Across Sub-Agents
+
+Previously, every agent/sub-agent repeated the same imports:
+
+- `Gemini` model definition  
+- `retry_config` block  
+- `google_search` tool import  
+- `types.HttpRetryOptions`  
+- ADK boilerplate  
+
+Now these are defined once, in one place.
+
+This cuts roughly **20–30% of repeated code** across the affected modules.
+
+---
+
+#### 2. Makes Future Model Swaps or Expansions Much Easier
+
+Because models now live in `common/llm.py`, you can:
+
+- Add new model constructors (e.g., `gemini_flash`, `gemini_pro`, future variants)  
+- Change retry behavior globally in a single file  
+- Introduce profile-specific LLMs (e.g., researcher vs editor vs critic)
+
+…all **without editing every agent file**.
+
+---
+
+#### 3. Prepares the Playground for v0.3.x+
+
+The next version series' (v0.3.x+) will introduce:
+
+- Custom tools  
+- MCP interoperability  
+- Shared registries  
+- Long-running operations  
+- Early context/memory abstractions  
+
+A centralized `common/` directory is the right architecture for this next stage.
+
+---
+
+### ✔ Modules Updated in This Release
+
+- `adk_agent_sequence/` ← Refactored to use `common.llm` and `common.tools`  
+- `adk_agent_parallel/` ← Same refactor applied  
+- `adk_agent_loop/` ← Same refactor applied  
+
+Left intentionally unchanged for contrast:
+
+- `adk_agent_multi/` ← Old multi-agent structure kept for comparison  
+- `adk_agent_single/` ← Historical single-agent baseline  
+
+This allows developers to clearly **compare the old vs new architecture** while the project evolves.
+
+---
+
+### ✔ Directory Layout (new + relevant parts)
+
+~~~
+common/
+│
+├── __init__.py  # Package marker (kept intentionally minimal)
+├── llm.py       # Canonical retry config + shared LLM constructors
+└── tools.py     # Shared Google Search & future tools
+
+adk_agent_loop/
+adk_agent_parallel/
+adk_agent_sequence/
+└── sub_agents/  # Reduced boilerplate, cleaner imports
+~~~
+
+---
+
+### ✔ Impact Summary
+
+- 🔻 **20–30% reduction in repeated code** across multi-agent modules  
+- ✔ **Cleaner sub-agent files**, easier to read and reason about  
+- ✔ **Centralized retry logic**, ensuring consistent behavior  
+- 🔧 **LLM definitions now hot-swappable** from a single location  
+- 🚀 Prepares the repo for **custom tools**, **MCP**, and other Day 2+ features  
+
+This is a foundational cleanup step that strengthens the codebase before we move into more advanced agent capabilities.
+
 
 ## 🌀 v0.2.3 — Loop Workflows: Iterative Refinement with LoopAgent  
 This update introduces **iterative multi-agent refinement** using a `LoopAgent`, completing the final pattern from Day 1 of the Agent Builder curriculum.  
@@ -359,24 +550,6 @@ uv run python -m adk_agent_multi.main
 uv run adk run adk_agent_multi
 ~~~
 
-### ADK Web UI
-
-~~~
-uv run adk web --port 8000
-~~~
-
-Then open:
-
-~~~
-http://localhost:8000
-~~~
-
-
-Agents visible in the UI:
-- `sample_agent`
-- `adk_agent_single`
-- `adk_agent_multi`
-
 ---
 
 ## v0.1.1 — ADK-Compliant Structure + Web UI Integration
@@ -406,6 +579,31 @@ Run via:
 ~~~
 uv run adk_agent_single/main.py
 ~~~
+
+---
+
+# ▶️ Running the Multi-Agent Systems via integrated ADK GUI
+
+### ADK Web UI
+**This creates an interactive session where you can toggle between the various agent systems for testing**
+
+~~~
+uv run adk web --port 8000
+~~~
+
+Then open:
+
+~~~
+http://localhost:8000
+~~~
+
+Agents visible in the UI:
+- `sample_agent`
+- `adk_agent_loop`
+- `adk_agent_multi`
+- `adk_agent_parallel`
+- `adk_agent_sequence`
+- `adk_agent_single`
 
 ---
 

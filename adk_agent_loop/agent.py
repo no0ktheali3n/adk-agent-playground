@@ -1,6 +1,4 @@
 from google.adk.agents import LoopAgent, SequentialAgent
-from google.adk.models.google_llm import Gemini
-from google.genai import types
 
 from .sub_agents.critic_agent import critic_agent
 from .sub_agents.initial_writer_agent import initial_writer_agent

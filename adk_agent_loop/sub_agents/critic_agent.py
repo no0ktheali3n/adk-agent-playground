@@ -1,21 +1,10 @@
 from google.adk.agents import Agent
-from google.adk.models.google_llm import Gemini
-from google.genai import types
-
-retry_config = types.HttpRetryOptions(
-    attempts=5,
-    exp_base=7,
-    initial_delay=1,
-    http_status_codes=[429, 500, 503, 504],
-)
+from common.llm import gemini_flash_lite
 
 # This agent's only job is to provide feedback or the approval signal. It has no tools.
 critic_agent = Agent(
     name="CriticAgent",
-    model=Gemini(
-        model="gemini-2.5-flash-lite",
-        retry_options=retry_config
-    ),
+    model=gemini_flash_lite(), #includes llm and retry logic imported from common/llm.py
     instruction="""You are a constructive story critic. Review the story provided below.
     Story: {current_story}
     

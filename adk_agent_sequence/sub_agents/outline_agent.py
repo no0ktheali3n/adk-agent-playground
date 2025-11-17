@@ -1,21 +1,10 @@
-from google.adk.agents import Agent, SequentialAgent, ParallelAgent, LoopAgent
-from google.adk.models.google_llm import Gemini
-from google.genai import types
-
-retry_config = types.HttpRetryOptions(
-    attempts=5,
-    exp_base=7,
-    initial_delay=1,
-    http_status_codes=[429, 500, 503, 504],
-)
+from google.adk.agents import Agent
+from common.llm import gemini_flash_lite
 
 # Outline Agent: Creates the initial blog post outline.
 outline_agent = Agent(
     name="OutlineAgent",
-    model=Gemini(
-        model="gemini-2.5-flash-lite",
-        retry_options=retry_config
-    ),
+    model=gemini_flash_lite(),
     instruction="""Create a blog outline for the given topic with:
     1. A catchy headline
     2. An introduction hook
