@@ -1,11 +1,8 @@
 from google.adk.agents import LlmAgent
-from google.adk.runners import InMemoryRunner
-from google.adk.sessions import InMemorySessionService
-from google.adk.tools import google_search, AgentTool, ToolContext
+
 from google.adk.code_executors import BuiltInCodeExecutor
 
 from common.llm import gemini_flash_lite
-from ..tools import get_fee_for_payment_method, get_exchange_rate
 
 """
 The previous currency converter asked the agent to "calculate the final amount after fees, but LLMs aren't always

@@ -86,7 +86,7 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 |   └── tools.py     # Shared Google Search & future tools
 │
 ├── day_2/                                   <-- v0.3.x custom + built-in tool systems
-|   ├── currency_converter_agent/             <-- v0.3.0 base agent (custom tools only)
+|   ├── currency_converter_agent/            <-- v0.3.0 base agent (custom tools only)
 |   │  ├─ __init__.py                        <-- package marker
 |   │  ├─ agent.py                           <-- currency converter agent definition
 |   │  ├─ main.py                            <-- local dev runner (python -m)
@@ -97,6 +97,12 @@ adk-agent-playground/                <-- Git repo root + UV environment root
 |   │     ├─ calculation_agent.py            <-- specialist agent w/ built-in code execution
 |   │     ├─ main.py                         <-- local dev runner (python -m)
 |   │     └─ tools.py                        <-- extended / shared tool logic
+|   |
+|   ├── mcp_agent/                           <-- v0.3.1 base agent (mcp tools only)
+|   │  ├─ __init__.py                        <-- package marker
+|   │  ├─ agent.py                           <-- currency converter agent definition
+|   │  ├─ main.py                            <-- local dev runner (python -m)
+|   │  └─ tools.py                           <-- tools (mcp everything server: tinyimage, kaggle, github)
 |
 ├── sample_agent/                    <-- v0.1.1 ADK-generated agent
 |   ├── __init__.py
@@ -186,7 +192,217 @@ This section wrapped up the foundational workflows (v0.2.x) and prepared the rep
 
 # 🚀 Version History
 
-## 🚀 Google ADK — v0.3.0 Release  
+## 🚀 v0.3.1 — MCP Server Integrations
+
+The **v0.3.1** update expands the Day 2 module with a dedicated **MCP-enabled agent** located under:
+
+~~~
+day_2/
+  mcp_agent/
+    agent.py
+    main.py
+    mcp_tools.py
+~~~
+
+This version introduces **Model Context Protocol (MCP)** integrations — allowing ADK agents to connect to external services via standardized, language-agnostic tool interfaces.  
+The core demonstration uses the **Everything MCP Server**, triggering the `getTinyImage` tool to return a tiny PNG image, which is then **decoded and saved to disk** in project root for local inspection.
+
+---
+
+## 🖼️ MCP Integration: Everything Server
+
+We implemented an MCP tool using `McpToolset` with `StdioConnectionParams`, enabling an ADK Agent to communicate with the **Everything MCP Server** and access its `getTinyImage` tool.
+
+~~~python
+mcp_image_server = McpToolset(
+    connection_params=StdioConnectionParams(
+        server_params=StdioServerParameters(
+            command="npx",      # Run MCP server via npx
+            args=[
+                "-y",          # Auto-confirm installation
+                "@modelcontextprotocol/server-everything",
+            ],
+        ),
+        tool_filter=["getTinyImage"],   # Only use the tiny-image tool
+        timeout=30,
+    ),
+)
+~~~
+
+## ✔️ How It Works (Behind the Scenes)
+
+### 1. Server Launch
+ADK runs:
+
+~~~bash
+npx -y @modelcontextprotocol/server-everything
+~~~
+
+### 2. Handshake  
+ADK establishes an MCP stdio communication tunnel.
+
+### 3. Tool Discovery  
+Server advertises available tools → ADK registers `getTinyImage`.
+
+### 4. Tool Integration  
+The tool becomes accessible in the agent’s tool list automatically.
+
+### 5. Tool Execution  
+When Gemini calls `getTinyImage()`, ADK forwards the request to the MCP server.
+
+### 6. Response  
+The MCP server returns:
+
+- text block: `"This is a tiny image:"`  
+- base64-encoded PNG image data  
+
+### 7. Local Save  
+v0.3.1 includes a helper that **decodes the base64 data** and writes `tiny_image.png` to disk.
+
+## 🧩 Base64 Image Decoding & File Saving
+
+The runner extracts the MCP tool output, decodes the image, and saves it locally:
+
+~~~python
+image_path = save_mcp_image(response)
+~~~
+
+### 🗂 Example Output
+
+~~~text
+📁 Tiny image saved to: C:\...\tiny_image.png
+~~~
+
+This pattern allows any MCP-generated base64 image to be written to disk for inspection or downstream processing.
+
+---
+
+## 🤖 Agent Definition (MCP-Enabled)
+
+Within `agent.py`, the ADK agent is configured to use the MCP tool:
+
+~~~python
+root_agent = LlmAgent(
+    model=gemini_flash_lite(),
+    name="image_agent",
+    instruction="Use the MCP Tool to generate images for user queries",
+    tools=[mcp_image_server],
+)
+~~~
+
+This makes the MCP server’s `getTinyImage` tool fully available to the agent.
+
+---
+
+## 🌐 Other Examples of MCP Tool Integrations
+
+MCP support is not limited to the Everything Server.  
+You can integrate any MCP-compatible service simply by adjusting the `connection_params`.
+
+### 📘 Kaggle MCP Server — Dataset & Notebook Operations
+
+~~~python
+McpToolset(
+    connection_params=StdioConnectionParams(
+        server_params=StdioServerParameters(
+            command="npx",
+            args=["-y", "mcp-remote", "https://www.kaggle.com/mcp"],
+        ),
+        timeout=30,
+    )
+)
+~~~
+
+**Capabilities include:**
+- Search/download Kaggle datasets  
+- Access notebook metadata  
+- Query competitions, files, metrics  
+
+---
+
+### 🧑‍💻 GitHub MCP Server — PR & Issue Analysis
+
+~~~python
+McpToolset(
+    connection_params=StreamableHTTPServerParams(
+        url="https://api.githubcopilot.com/mcp/",
+        headers={
+            "Authorization": f"Bearer {GITHUB_TOKEN}",
+            "X-MCP-Toolsets": "all",
+            "X-MCP-Readonly": "true",
+        },
+    )
+)
+~~~
+
+**Capabilities include:**
+- Analyze PRs or issues  
+- Access repo structures  
+- Drive review automation  
+
+---
+
+## 🧭 This List Is Not Exhaustive
+
+MCP servers exist for:
+
+- Filesystem browsers  
+- Browser automation  
+- Database clients  
+- Search engines  
+- Cloud service wrappers  
+- Local tools exposed via MCP shells  
+
+Anything that **speaks MCP** can be wired in using the same pattern.
+
+---
+
+## ⚠️ Known Issue (Runtime / Shutdown Error)
+
+You may encounter the following error after MCP tool execution:
+
+~~~text
+RuntimeError: Attempted to exit cancel scope in a different task than it was entered in
+~~~
+
+### 💡 What This Means
+
+- The MCP stdio client launches a background task for the server.  
+- When the script ends, the ADK runner shuts down before the MCP client finishes cleanup.  
+- `anyio` detects a mismatched async teardown and raises the error.
+
+### 🧪 Does It Affect Execution?
+
+❌ **No.**  
+Image generation works correctly, and the PNG is saved successfully.
+
+### 🛠 Why It Happens
+
+- MCP stdio servers require persistent asynchronous connections.  
+- ADK’s `InMemoryRunner` currently does not fully synchronize teardown.
+
+### 🧭 Planned Fix
+
+Future versions of ADK or MCP client libraries may resolve this async race condition.
+
+---
+
+## 🥇 Summary of v0.3.1
+
+| Feature                   | Description                                      |
+|--------------------------|--------------------------------------------------|
+| MCPToolset added         | Integration with external MCP servers            |
+| Everything Server example| Tiny-image generation + PNG decode/save          |
+| New agent directory      | `day_2/mcp_agent/`                               |
+| PNG export support       | Base64 decoding + file saving                    |
+| Expanded documentation   | Additional MCP server types                      |
+| Known async issue        | Documented + safe to ignore                      |
+
+This update opens the door to **cross-service agent capabilities powered by MCP** — an important foundation for upcoming ADK agent orchestration work.
+
+---
+
+## 🚀 Google ADK Playground — v0.3.0 Release
 ### **Beginning the v0.3.x Series: Advanced Tooling, Multi-Agent Patterns & Reliable Execution**
 
 The **v0.3.x update series** marks a shift from simple agent loops toward **modular, production-minded tool integration**, using Google’s ADK to explore:
@@ -201,7 +417,6 @@ This phase focuses on *control*, *delegation*, and *specialization* in multi-age
 ---
 
 ## 🧩 Agent Tools vs. Sub-Agents  
-*(Context from Bootcamp Section 3.3)*
 
 Understanding how ADK treats multi-agent systems is key to architecting reliable pipelines.
 
